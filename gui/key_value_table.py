@@ -35,7 +35,6 @@ class KeyValueTableWidget(Gtk.Box):
         key_renderer = Gtk.CellRendererText()
         key_renderer.set_property('editable', True)
         key_renderer.connect('edited', self._on_key_edited)
-        key_renderer.connect('editing-started', self._on_key_editing_started)
         self._key_column = Gtk.TreeViewColumn('Header', key_renderer, text=0)
         self._key_column.set_resizable(True)
         self._key_column.set_min_width(80)
@@ -114,36 +113,6 @@ class KeyValueTableWidget(Gtk.Box):
     def _on_model_changed(self, model) -> None:
         """Handle model changes."""
         self._refresh_from_model()
-
-    def _on_key_editing_started(self, renderer, editable, path: str) -> None:
-        """Handle start of key editing - set up Tab/Enter to move to value."""
-        self._editing_path = path
-        editable.connect('key-press-event', self._on_key_cell_keypress)
-
-    def _on_key_cell_keypress(self, editable, event) -> bool:
-        """Handle key press in key cell - Tab/Enter moves to value column."""
-        if event.keyval in (Gdk.KEY_Tab, Gdk.KEY_Return, Gdk.KEY_KP_Enter):
-            # Get the text and finish editing
-            new_text = editable.get_text()
-            path = self._editing_path
-
-            # Emit edited signal to save the key
-            tree_iter = self.liststore.get_iter(path)
-            old_key = self.liststore.get_value(tree_iter, 0)
-            if old_key != new_text:
-                self._model.rename_key(old_key, new_text)
-
-            # Move to value column after a short delay (let the edit finish)
-            def move_to_value():
-                self.treeview.set_cursor(
-                    Gtk.TreePath.new_from_string(path),
-                    self._value_column,
-                    True
-                )
-                return False
-            GLib.idle_add(move_to_value)
-            return True
-        return False
 
     def _on_key_edited(self, renderer, path: str, new_text: str) -> None:
         """Handle key edit - delegate to model."""
