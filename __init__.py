@@ -1,9 +1,11 @@
 import logging
 
-from zim.notebook import Page
+from zim.gui.notebookview import NotebookViewExtension
+from zim.notebook import Notebook, Page, NotebookExtension
 from zim.plugins import PluginClass, InsertedObjectTypeExtension
 from zim.gui.pageview import PageViewExtension, PageView
 from zim.gui.widgets import RIGHT_PANE
+from zim.signals import SIGNAL_AFTER
 from .model import MetadataModel
 from .gui import MetadataEditorWidget, MetadataBlockWidget
 
@@ -35,6 +37,13 @@ for zim-wiki files or front-matter for markdown files).
     model = MetadataModel()
 
 
+class MetadataEditorNotebookExtension(NotebookViewExtension):
+    def __init__(self, plugin: MetadataEditorPlugin, pageview: PageView):
+        NotebookViewExtension.__init__(self, plugin, pageview)
+
+        self.plugin.model.on_page_change(pageview, pageview.page)
+        self.connectto(pageview, "page-changed", self.plugin.model.on_page_change)
+
 class MetadataEditorPageViewExtension(PageViewExtension):
     """Extension that adds the metadata editor sidebar."""
 
@@ -49,14 +58,6 @@ class MetadataEditorPageViewExtension(PageViewExtension):
         self.widget.show_all()
 
         # Load initial page and connect to changes
-        plugin.model.on_page_change(pageview)
-        self.widget.refresh()
-
-        self.connectto(pageview, 'page-changed', self.on_page_changed)
-
-    def on_page_changed(self, pageview: PageView, page: Page):
-        """Handle page navigation."""
-        self.plugin.model.on_page_change(pageview)
         self.widget.refresh()
 
     def teardown(self):
