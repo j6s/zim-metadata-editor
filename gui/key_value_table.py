@@ -1,4 +1,4 @@
-from gi.repository import Gtk, Gdk, GLib
+from gi.repository import Gtk, Gdk, GLib, Pango
 
 from ..model import MetadataModel
 
@@ -43,10 +43,13 @@ class KeyValueTableWidget(Gtk.Box):
         # Value column (editable)
         value_renderer = Gtk.CellRendererText()
         value_renderer.set_property('editable', True)
+        value_renderer.set_property('ellipsize', Pango.EllipsizeMode.END)
         value_renderer.connect('edited', self._on_value_edited)
         self._value_column = Gtk.TreeViewColumn('Value', value_renderer, text=1)
         self._value_column.set_resizable(True)
         self._value_column.set_expand(True)
+        self._value_column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
+        self._value_column.set_fixed_width(100)
         self.treeview.append_column(self._value_column)
 
         self.pack_start(self.treeview, True, True, 0)
