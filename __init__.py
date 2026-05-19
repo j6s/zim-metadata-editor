@@ -4,7 +4,7 @@ from zim.gui.notebookview import NotebookViewExtension
 from zim.notebook import Notebook, Page, NotebookExtension
 from zim.plugins import PluginClass, InsertedObjectTypeExtension
 from zim.gui.pageview import PageViewExtension, PageView
-from zim.gui.widgets import RIGHT_PANE
+from zim.gui.widgets import LEFT_PANE, RIGHT_PANE, BOTTOM_PANE, PANE_POSITIONS
 from zim.signals import SIGNAL_AFTER
 from .model import MetadataModel
 from .gui import MetadataEditorWidget, MetadataBlockWidget
@@ -17,6 +17,8 @@ try:
 except ImportError:
     _ = lambda x: x
 
+# Pane positions including "none" to disable sidebar
+SIDEBAR_POSITIONS = PANE_POSITIONS + (('none', _('Disabled')),)
 
 class MetadataEditorPlugin(PluginClass):
 
@@ -31,7 +33,7 @@ for zim-wiki files or front-matter for markdown files).
     }
 
     plugin_preferences = (
-        # (key, type, label, default)
+        ('pane', 'choice', _('Sidebar position'), RIGHT_PANE, SIDEBAR_POSITIONS),
     )
 
     model = MetadataModel()
@@ -50,15 +52,28 @@ class MetadataEditorPageViewExtension(PageViewExtension):
     def __init__(self, plugin: MetadataEditorPlugin, pageview: PageView):
         PageViewExtension.__init__(self, plugin, pageview)
 
-        self.widget = MetadataEditorWidget(plugin.model)
+        self.widget = None
+        self._add_sidebar_if_enabled(plugin.preferences)
 
-        # Add to sidebar (hardcoded to right pane)
-        self._window.add_sidepane_widget(self.widget.__class__.__name__, self.widget, RIGHT_PANE)
-        self._sidepane_widgets[self.widget] = None  # No preference signal to disconnect
-        self.widget.show_all()
+        # Listen for preference changes
+        self.connectto(plugin.preferences, 'changed', self._add_sidebar_if_enabled)
 
-        # Load initial page and connect to changes
-        self.widget.refresh()
+    def _add_sidebar_if_enabled(self, preferences) -> None:
+        """Add sidebar widget if pane preference is not 'none'."""
+        if self.widget is not None:
+            self._window.remove(self.widget)
+            if self.widget in self._sidepane_widgets:
+                del self._sidepane_widgets[self.widget]
+            self.widget = None
+
+        pane = preferences['pane']
+        if pane != 'none':
+            self.widget = MetadataEditorWidget(self.plugin.model)
+            self._window.add_sidepane_widget(
+                self.widget.__class__.__name__, self.widget, pane)
+            self._sidepane_widgets[self.widget] = None
+            self.widget.show_all()
+            self.widget.refresh()
 
     def teardown(self) -> None:
         """Clean up when plugin is disabled."""
