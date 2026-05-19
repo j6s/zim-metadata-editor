@@ -1,11 +1,11 @@
 import logging
 
 from zim.notebook import Page
-from zim.plugins import PluginClass
+from zim.plugins import PluginClass, InsertedObjectTypeExtension
 from zim.gui.pageview import PageViewExtension, PageView
-from .metadata_handler import MetadataHandler
 from zim.gui.widgets import RIGHT_PANE
-from .gui import MetadataEditorWidget
+from .model import MetadataModel
+from .gui import MetadataEditorWidget, MetadataBlockWidget
 
 logger = logging.getLogger('zim.plugins.metadata_editor')
 
@@ -32,7 +32,7 @@ for zim-wiki files or front-matter for markdown files).
         # (key, type, label, default)
     )
 
-    metadata_handler = MetadataHandler()
+    model = MetadataModel()
 
 
 class MetadataEditorPageViewExtension(PageViewExtension):
@@ -41,23 +41,42 @@ class MetadataEditorPageViewExtension(PageViewExtension):
     def __init__(self, plugin: MetadataEditorPlugin, pageview: PageView):
         PageViewExtension.__init__(self, plugin, pageview)
 
-        self.widget = MetadataEditorWidget(pageview, self.plugin.metadata_handler)
+        self.widget = MetadataEditorWidget(plugin.model)
 
         # Add to sidebar (hardcoded to right pane)
         self._window.add_sidepane_widget(self.widget.__class__.__name__, self.widget, RIGHT_PANE)
         self._sidepane_widgets[self.widget] = None  # No preference signal to disconnect
         self.widget.show_all()
 
-        # Connect to page change signal
-        if pageview.page is not None:
-            self.on_page_changed(pageview, pageview.page)
+        # Load initial page and connect to changes
+        plugin.model.on_page_change(pageview)
+        self.widget.refresh()
+
         self.connectto(pageview, 'page-changed', self.on_page_changed)
 
     def on_page_changed(self, pageview: PageView, page: Page):
         """Handle page navigation."""
-        self.widget.load_page(page)
+        self.plugin.model.on_page_change(pageview)
+        self.widget.refresh()
 
     def teardown(self):
         """Clean up when plugin is disabled."""
         PageViewExtension.teardown(self)
 
+
+class MetadataBlockObjectType(InsertedObjectTypeExtension):
+    """Extension that registers the metadata block as an insertable object."""
+
+    name = 'metadatablock'
+    label = _('Metadata Block')
+    verb_icon = 'accessories-text-editor-symbolic'
+
+    def model_from_data(self, notebook, page, attrib, data):
+        """All blocks use the same model."""
+        return self.plugin.model
+
+    def data_from_model(self, model):
+        return {'type': self.name}, ''
+
+    def create_widget(self, model):
+        return MetadataBlockWidget(model)
