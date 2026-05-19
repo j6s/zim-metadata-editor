@@ -11,7 +11,7 @@ class MetadataBlockWidget(InsertedObjectWidget):
 
     def __init__(self, model: MetadataModel):
         InsertedObjectWidget.__init__(self)
-        self._model = model
+        self._model: MetadataModel = model
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -19,7 +19,7 @@ class MetadataBlockWidget(InsertedObjectWidget):
         frame = Gtk.Frame()
         frame.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
 
-        self._table = KeyValueTableWidget(self._model, toolbar_style='header')
+        self._table = KeyValueTableWidget(self._model)
 
         frame.add(self._table)
         self.add(frame)

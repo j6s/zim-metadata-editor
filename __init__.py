@@ -60,7 +60,7 @@ class MetadataEditorPageViewExtension(PageViewExtension):
         # Load initial page and connect to changes
         self.widget.refresh()
 
-    def teardown(self):
+    def teardown(self) -> None:
         """Clean up when plugin is disabled."""
         PageViewExtension.teardown(self)
 
@@ -72,12 +72,12 @@ class MetadataBlockObjectType(InsertedObjectTypeExtension):
     label = _('Metadata Block')
     verb_icon = 'accessories-text-editor-symbolic'
 
-    def model_from_data(self, notebook, page, attrib, data):
+    def model_from_data(self, notebook, page, attrib, data) -> MetadataModel:
         """All blocks use the same model."""
         return self.plugin.model
 
-    def data_from_model(self, model):
+    def data_from_model(self, model: MetadataModel):
         return {'type': self.name}, ''
 
-    def create_widget(self, model):
+    def create_widget(self, model: MetadataModel):
         return MetadataBlockWidget(model)

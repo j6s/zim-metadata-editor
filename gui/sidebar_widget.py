@@ -18,8 +18,8 @@ class MetadataEditorWidget(Gtk.ScrolledWindow, WindowSidePaneWidget):
         self.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         self.set_shadow_type(Gtk.ShadowType.IN)
 
-        self._model = model
-        self._table = KeyValueTableWidget(model, toolbar_style='bottom')
+        self._model: MetadataModel = model
+        self._table = KeyValueTableWidget(model)
 
         self.add(self._table)
         self._table.show_all()

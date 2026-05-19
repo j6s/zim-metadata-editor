@@ -6,19 +6,17 @@ from ..model import MetadataModel
 class KeyValueTableWidget(Gtk.Box):
     """Widget for editing key-value pairs. All data operations go through the model."""
 
-    def __init__(self, model: MetadataModel, toolbar_style: str = 'bottom'):
+    def __init__(self, model: MetadataModel):
         Gtk.Box.__init__(self, orientation=Gtk.Orientation.VERTICAL, spacing=0)
 
-        self._model = model
-        self._toolbar_style = toolbar_style
+        self._model: MetadataModel = model
 
         self._build_ui()
         self._model.connect('changed', self._on_model_changed)
 
     def _build_ui(self) -> None:
         """Build the widget UI."""
-        if self._toolbar_style == 'header':
-            self._build_header_toolbar()
+        self._build_header_toolbar()
 
         # Create ListStore: key, value
         self.liststore = Gtk.ListStore(str, str)
@@ -53,9 +51,6 @@ class KeyValueTableWidget(Gtk.Box):
         self.treeview.append_column(self._value_column)
 
         self.pack_start(self.treeview, True, True, 0)
-
-        if self._toolbar_style == 'bottom':
-            self._build_bottom_toolbar()
 
         # Info label for empty state
         self.info_label = Gtk.Label()
@@ -102,30 +97,6 @@ class KeyValueTableWidget(Gtk.Box):
 
         separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
         self.pack_start(separator, False, False, 0)
-
-    def _build_bottom_toolbar(self) -> None:
-        """Build toolbar at bottom of widget."""
-        toolbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-        toolbar.set_margin_top(4)
-        toolbar.set_margin_start(4)
-        toolbar.set_margin_end(4)
-        toolbar.set_margin_bottom(4)
-
-        add_button = Gtk.Button()
-        add_button.set_image(Gtk.Image.new_from_icon_name(
-            'list-add-symbolic', Gtk.IconSize.BUTTON))
-        add_button.set_tooltip_text('Add new header')
-        add_button.connect('clicked', self._on_add_clicked)
-        toolbar.pack_start(add_button, False, False, 0)
-
-        remove_button = Gtk.Button()
-        remove_button.set_image(Gtk.Image.new_from_icon_name(
-            'list-remove-symbolic', Gtk.IconSize.BUTTON))
-        remove_button.set_tooltip_text('Remove selected header')
-        remove_button.connect('clicked', self._on_remove_clicked)
-        toolbar.pack_start(remove_button, False, False, 0)
-
-        self.pack_start(toolbar, False, False, 0)
 
     def _refresh_from_model(self) -> None:
         """Refresh the display from the model."""
